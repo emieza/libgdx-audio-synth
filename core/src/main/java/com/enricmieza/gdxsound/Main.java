@@ -27,7 +27,7 @@ public class Main extends ApplicationAdapter {
     @Override
     public void render() {
         // ...activitat GUI...
-        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
+        ScreenUtils.clear(0.25f, 0.15f, 0.35f, 1f);
         batch.begin();
         batch.draw(image, 140, 210);
         batch.end();
@@ -37,12 +37,22 @@ public class Main extends ApplicationAdapter {
             synth.sound = true;
             float x = Gdx.input.getX();
             float y = Gdx.input.getY();
+            int height = Gdx.graphics.getHeight();
+            int width = Gdx.graphics.getWidth();
 
-            synth.freq = 440 + x;
+            // l'amplitud la fem en funció (inversa) de la distància X
+            // modificació logarítmica
+            final float a = 999;
+            float linx = x/width;
+            float logx = (float) ( Math.log(1+a*linx)/Math.log(1+a) );
+            synth.amplitude = 1-logx;
+            //synth.amplitude = 1-linx; //lineal per test
+            // la freqüència base és a l'extrem inferior (440 Hz)
+            // augmenta al doble quan arriba al limit superior
+            synth.freq = 440 * (1 + ((float)height - y) / (float)height );
         } else {
             synth.sound = false;
         }
-
     }
 
     @Override

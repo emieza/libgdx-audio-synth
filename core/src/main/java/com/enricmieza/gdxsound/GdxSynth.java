@@ -7,6 +7,7 @@ public class GdxSynth extends Thread {
     public volatile boolean running = true;
     public volatile boolean sound = false;
     public float sampleRate = 48000.0f;
+    public float amplitude = 1f;
     public float freq = 440.0f;
     public float step = 0.03f;
     private float phase = 0f;
@@ -16,7 +17,7 @@ public class GdxSynth extends Thread {
         float[] samples = new float[numSamples];
         for (int i = 0; i < numSamples; i++) {
             float t = i / sampleRate;
-            samples[i] = (float) Math.sin(phase + 2*Math.PI*frequency*t);
+            samples[i] = amplitude * (float) Math.sin(phase + 2*Math.PI*frequency*t);
         }
         // keep phase to avoid glitches
         phase += 2f * (float)Math.PI * frequency * numSamples/sampleRate;
