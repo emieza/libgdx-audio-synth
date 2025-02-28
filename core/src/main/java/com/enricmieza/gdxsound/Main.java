@@ -18,6 +18,7 @@ public class Main extends ApplicationAdapter {
     boolean sona = true;
     boolean running = true;
     AudioDevice audioDevice;
+    AudioThread audioThread;
 
     public static float[] generaSinusoide(float frequency, float sampleRate, float durationInSeconds) {
         int numSamples = (int) (sampleRate * durationInSeconds);
@@ -29,43 +30,45 @@ public class Main extends ApplicationAdapter {
         return samples;
     }
 
-    public static float[] generaSilenci(float sampleRate, float durationInSeconds) {
-        int numSamples = (int) (sampleRate * durationInSeconds);
-        float[] samples = new float[numSamples];
-        for (int i = 0; i < numSamples; i++) {
-            samples[i] = (float) 0.0f;
-        }
-        return samples;
-    }
+    class AudioThread extends Thread {
+        @Override
+        public void run() {
+            // creem sinusoide (un sol cop)
+            float[] sineWave = generaSinusoide(freq, sampleRate, step);
 
-    Thread soundThread = new Thread(() -> {
-        float[] sineWave = generaSinusoide(freq, sampleRate, step);
-        float[] silenci = generaSilenci(sampleRate, step);
-
-        while(running) {
-            if( sona )
-                audioDevice.writeSamples(sineWave, 0, sineWave.length);
-            else {
-                audioDevice.writeSamples(silenci, 0, silenci.length);
+            while(running) {
+                if( sona )
+                    audioDevice.writeSamples(sineWave, 0, sineWave.length);
+                else {
+                    // dormim una estona (la mateixa que el fragment d'àudio)
+                    try {
+                        Thread.sleep((long) (step*1000) );
+                    } catch(Exception e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
-    });
+    }
 
 
     @Override
     public void create() {
+        // ...elements GUI...
         batch = new SpriteBatch();
         image = new Texture("libgdx.png");
 
-        // Crear un dispositiu d'àudio i reproduir l'ona sinusoïdal
+        // Crear un dispositiu d'àudio
         audioDevice = Gdx.audio.newAudioDevice((int) sampleRate, true);
-        // posem en marxa el thread d'audio
-        soundThread.start();
+
+        // creem i posem en marxa el thread d'audio
+        audioThread = new AudioThread();
+        audioThread.start();
     }
 
     @Override
     public void render() {
-        // GUI
+        // ...activitat GUI...
         ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
         batch.begin();
         batch.draw(image, 140, 210);
@@ -81,12 +84,14 @@ public class Main extends ApplicationAdapter {
     public void dispose() {
         // indiquem al thread de so que acabi
         running = false;
+
         // destruim objectes GUI
         batch.dispose();
         image.dispose();
-        // esperem a que acabi de sortir el thread d'audio
+
+        // IMPORTANT: esperem a que acabi de sortir el thread d'audio
         try {
-            soundThread.join();
+            audioThread.join();
         } catch(Exception e) {
             e.printStackTrace();
         }
